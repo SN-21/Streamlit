@@ -104,6 +104,7 @@ with row2_3:
 
 for i in range(len(game)):
     game_id = game[i]["gameId"]
+    gameStatus = game[i]["gameStatusText"]
     awayTeam = game[i]["awayTeam"]["teamTricode"]
     homeTeam = game[i]["homeTeam"]["teamTricode"]
 
@@ -126,15 +127,46 @@ for i in range(len(game)):
     homeTeam_win_count = game[i]["homeTeam"]["wins"]
     homeTeam_lose_count = game[i]["homeTeam"]["losses"]
 
-    away_Team_q1point = game[i]["awayTeam"]["periods"][0]["score"]
-    away_Team_q2point = game[i]["awayTeam"]["periods"][1]["score"]
-    away_Team_q3point = game[i]["awayTeam"]["periods"][2]["score"]
-    away_Team_q4point = game[i]["awayTeam"]["periods"][3]["score"]
+    if gameStatus == "Final/OT" or gameStatus == "OT":
+        away_Team_q1point = game[i]["awayTeam"]["periods"][0]["score"]
+        away_Team_q2point = game[i]["awayTeam"]["periods"][1]["score"]
+        away_Team_q3point = game[i]["awayTeam"]["periods"][2]["score"]
+        away_Team_q4point = game[i]["awayTeam"]["periods"][3]["score"]
+        away_Team_OTpoint = game[i]["awayTeam"]["periods"][4]["score"]
 
-    home_Team_q1point = game[i]["homeTeam"]["periods"][0]["score"]
-    home_Team_q2point = game[i]["homeTeam"]["periods"][1]["score"]
-    home_Team_q3point = game[i]["homeTeam"]["periods"][2]["score"]
-    home_Team_q4point = game[i]["homeTeam"]["periods"][3]["score"]
+        home_Team_q1point = game[i]["homeTeam"]["periods"][0]["score"]
+        home_Team_q2point = game[i]["homeTeam"]["periods"][1]["score"]
+        home_Team_q3point = game[i]["homeTeam"]["periods"][2]["score"]
+        home_Team_q4point = game[i]["homeTeam"]["periods"][3]["score"]
+        home_Team_OTpoint = game[i]["homeTeam"]["periods"][4]["score"]
+
+    elif gameStatus == "Final/OT2" or gameStatus == "OT2":
+        away_Team_q1point = game[i]["awayTeam"]["periods"][0]["score"]
+        away_Team_q2point = game[i]["awayTeam"]["periods"][1]["score"]
+        away_Team_q3point = game[i]["awayTeam"]["periods"][2]["score"]
+        away_Team_q4point = game[i]["awayTeam"]["periods"][3]["score"]
+        away_Team_OTpoint = (game[i]["awayTeam"]["periods"][4]["score"]) + (
+            game[i]["awayTeam"]["periods"][5]["score"]
+        )
+
+        home_Team_q1point = game[i]["homeTeam"]["periods"][0]["score"]
+        home_Team_q2point = game[i]["homeTeam"]["periods"][1]["score"]
+        home_Team_q3point = game[i]["homeTeam"]["periods"][2]["score"]
+        home_Team_q4point = game[i]["homeTeam"]["periods"][3]["score"]
+        home_Team_OTpoint = (game[i]["homeTeam"]["periods"][4]["score"]) + (
+            game[i]["homeTeam"]["periods"][5]["score"]
+        )
+
+    else:
+        away_Team_q1point = game[i]["awayTeam"]["periods"][0]["score"]
+        away_Team_q2point = game[i]["awayTeam"]["periods"][1]["score"]
+        away_Team_q3point = game[i]["awayTeam"]["periods"][2]["score"]
+        away_Team_q4point = game[i]["awayTeam"]["periods"][3]["score"]
+
+        home_Team_q1point = game[i]["homeTeam"]["periods"][0]["score"]
+        home_Team_q2point = game[i]["homeTeam"]["periods"][1]["score"]
+        home_Team_q3point = game[i]["homeTeam"]["periods"][2]["score"]
+        home_Team_q4point = game[i]["homeTeam"]["periods"][3]["score"]
 
     leader_away_assist = game[i]["gameLeaders"]["awayLeaders"]["assists"]
     leader_away_rebounds = game[i]["gameLeaders"]["awayLeaders"]["rebounds"]
@@ -162,7 +194,7 @@ for i in range(len(game)):
     arenaState = boxscore_game["arena"]["arenaState"]
     attendance = boxscore_game["attendance"]
 
-    gameStatus = game[i]["gameStatusText"]
+    # gameStatus = game[i]["gameStatusText"]
 
     awayteam_boxscore = boxscore_game["awayTeam"]["players"]
     hometeam_boxscore = boxscore_game["homeTeam"]["players"]
@@ -433,16 +465,35 @@ for i in range(len(game)):
         process_strings=game_chart_process_strings,
     )
 
-    score_table = pd.DataFrame(
-        data={
-            "1": [away_Team_q1point, home_Team_q1point],
-            "2": [away_Team_q2point, home_Team_q2point],
-            "3": [away_Team_q3point, home_Team_q3point],
-            "4": [away_Team_q4point, home_Team_q4point],
-            "TOTAL": [awayTeam_score, homeTeam_score],
-        },
-        index=[awayTeam_full_name, homeTeam_full_name],
-    )
+    if (
+        gameStatus == "Final/OT"
+        or gameStatus == "OT"
+        or gameStatus == "Final/OT2"
+        or gameStatus == "OT2"
+    ):
+        score_table = pd.DataFrame(
+            data={
+                "1": [away_Team_q1point, home_Team_q1point],
+                "2": [away_Team_q2point, home_Team_q2point],
+                "3": [away_Team_q3point, home_Team_q3point],
+                "4": [away_Team_q4point, home_Team_q4point],
+                "OT": [away_Team_OTpoint, home_Team_OTpoint],
+                "TOTAL": [awayTeam_score, homeTeam_score],
+            },
+            index=[awayTeam_full_name, homeTeam_full_name],
+        )
+
+    else:
+        score_table = pd.DataFrame(
+            data={
+                "1": [away_Team_q1point, home_Team_q1point],
+                "2": [away_Team_q2point, home_Team_q2point],
+                "3": [away_Team_q3point, home_Team_q3point],
+                "4": [away_Team_q4point, home_Team_q4point],
+                "TOTAL": [awayTeam_score, homeTeam_score],
+            },
+            index=[awayTeam_full_name, homeTeam_full_name],
+        )
 
     df_away_inactive = Inactive_Player(df=awayteam_boxscore_df)
     df_home_inactive = Inactive_Player(df=hometeam_boxscore_df)
