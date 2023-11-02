@@ -7,13 +7,13 @@ from nba_api.stats.endpoints import boxscoreusagev2
 
 
 games = scoreboard.ScoreBoard()
-
 game_score = games.get_dict()
+
 scoreboard = game_score["scoreboard"]
 game = scoreboard["games"]
 game_date = scoreboard["gameDate"]
 
-
+# Boxscoreのdataframe作成関数定義
 def Boxscore_DataFrame_Transform(
     df,
     sort_columns,
@@ -39,6 +39,7 @@ def Boxscore_DataFrame_Transform(
     return df_fillna_style
 
 
+# teamstats dataframe 作成関数定義
 def TeamStats_DataFrame_Transform(df, sort_columns, rename_columns, format_columns):
     df_TS_sort = df[sort_columns]
     df_TS_rename = df_TS_sort.rename(columns=rename_columns)
@@ -47,6 +48,7 @@ def TeamStats_DataFrame_Transform(df, sort_columns, rename_columns, format_colum
     return df_TS_style
 
 
+# gamechart daraframe 作成関数定義
 def GameChart_DataFrame_Transform(
     df, sort_columns, rename_columns, format_columns, process_strings
 ):
@@ -59,9 +61,17 @@ def GameChart_DataFrame_Transform(
     return df_GC_style
 
 
+# inactive player 作成関数定義
+
+
 def Inactive_Player(df):
     df_query = df.query('status == "INACTIVE"')
-    df_loc = df_query.loc[:, ["name", "notPlayingReason"]]
+    try:
+        df_loc = df_query.loc[:, ["name", "notPlayingReason"]]
+
+    except KeyError:
+        df_loc = df_query.loc[:, ["name"]]
+
     index_name = df_query.loc[:, "name"]
     df_set_axis = df_loc.set_axis(index_name)
     df_drop = df_set_axis.drop(["name"], axis=1)
@@ -71,6 +81,18 @@ def Inactive_Player(df):
     return df_inactive
 
 
+# def Inactive_Player(df):
+#     df_query = df.query('status == "INACTIVE"')
+#     df_loc = df_query.loc[:, ["name", "notPlayingReason"]]
+#     index_name = df_query.loc[:, "name"]
+#     df_set_axis = df_loc.set_axis(index_name)
+#     df_drop = df_set_axis.drop(["name"], axis=1)
+#     df_drop_rename = df_drop.rename(columns={"notPlayingReason": "REASON"})
+#     df_inactive = df_drop_rename.fillna("-")
+
+#     return df_inactive
+
+# 　usage dataframe 作成関数定義
 def Usage_dataframe_transform(df, teamname, drop_columns):
     df_query_usage = df.query("TEAM_ABBREVIATION == @teamname")
     index_name_usage = df_query_usage.loc[:, "PLAYER_NAME"]
@@ -89,19 +111,23 @@ def Usage_dataframe_transform(df, teamname, drop_columns):
 
 # ここはわざわざ　for文でgameidのリストを作らなくても下のfor文でgameidを毎回取得すれば不要だった
 
-
+# 最初の行の表示を中央にする為に、３カラム化
+# ３分割にして 3,3,2 の比率にすれば row2_2 の 3 が中央になる
 row2_1, row2_2, row2_3 = st.columns((3, 3, 2))
 
-
+# ここは1行目　　空白にする
 with row2_1:
     st.subheader(" ")
 
+# ここが2行目 game_data 試合日の表示
 with row2_2:
     st.header(f"{game_date}")
 
+# ここは3行目 空白
 with row2_3:
     st.subheader(" ")
 
+# ここから各試合のデータ取りのためのループ
 for i in range(len(game)):
     game_id = game[i]["gameId"]
     gameStatus = game[i]["gameStatusText"]
@@ -127,6 +153,7 @@ for i in range(len(game)):
     homeTeam_win_count = game[i]["homeTeam"]["wins"]
     homeTeam_lose_count = game[i]["homeTeam"]["losses"]
 
+    # ここのif文はovertime用
     if gameStatus == "Final/OT" or gameStatus == "OT":
         away_Team_q1point = game[i]["awayTeam"]["periods"][0]["score"]
         away_Team_q2point = game[i]["awayTeam"]["periods"][1]["score"]
@@ -181,9 +208,6 @@ for i in range(len(game)):
     boxscores = boxscore.BoxScore(game_id=game_id)
     boxscore_game = boxscores.game.get_dict()
 
-    # boxscore_usage = boxscoreusagev2.BoxScoreUsageV2(game_id=gameid_list[i])
-    # df_boxscore_usage = boxscore_usage.sql_players_usage.get_data_frame()
-
     official = boxscores.officials.get_dict()
     official_1 = official[0]["name"]
     official_2 = official[1]["name"]
@@ -193,8 +217,6 @@ for i in range(len(game)):
     arena_city = boxscore_game["arena"]["arenaCity"]
     arenaState = boxscore_game["arena"]["arenaState"]
     attendance = boxscore_game["attendance"]
-
-    # gameStatus = game[i]["gameStatusText"]
 
     awayteam_boxscore = boxscore_game["awayTeam"]["players"]
     hometeam_boxscore = boxscore_game["homeTeam"]["players"]
@@ -238,16 +260,12 @@ for i in range(len(game)):
         "statistics.points",
         "statistics.fieldGoalsMade",
         "statistics.fieldGoalsAttempted",
-        # "statistics.fieldGoalsPercentage",
         "statistics.twoPointersMade",
         "statistics.twoPointersAttempted",
-        # "statistics.twoPointersPercentage",
         "statistics.threePointersMade",
         "statistics.threePointersAttempted",
-        # "statistics.threePointersPercentage",
         "statistics.freeThrowsMade",
         "statistics.freeThrowsAttempted",
-        # "statistics.freeThrowsPercentage",
         "statistics.reboundsDefensive",
         "statistics.reboundsOffensive",
         "statistics.reboundsTotal",
@@ -258,37 +276,7 @@ for i in range(len(game)):
         "statistics.turnovers",
         "statistics.foulsPersonal",
         "statistics.foulsTechnical",
-        # "statistics.plusMinusPoints",
     ]
-    # boxscore_loc_columns = [
-    #     "#",
-    #     "POS",
-    #     "MIN",
-    #     "PTS",
-    #     "FGM",
-    #     "FGA",
-    #     "FG%",
-    #     "2PM",
-    #     "2PA",
-    #     "2P%",
-    #     "3PM",
-    #     "3PA",
-    #     "3P%",
-    #     "FTM",
-    #     "FTA",
-    #     "FT%",
-    #     "DREB",
-    #     "OREB",
-    #     "REB",
-    #     "AST",
-    #     "BLK",
-    #     "BLKR",
-    #     "STL",
-    #     "TO",
-    #     "PF",
-    #     "TF",
-    #     "+/-",
-    # ]
 
     boxscore_rename_columns = {
         "jerseyNum": "#",
@@ -412,7 +400,7 @@ for i in range(len(game)):
         rename_columns=teamstats_rename_columns,
         format_columns=teamstats_format_columns,
     )
-
+    # ここからgamechart dataframe作成開始
     game_chart_sort_columns = [
         "biggestLead",
         "biggestScoringRun",
@@ -464,6 +452,7 @@ for i in range(len(game)):
         format_columns=game_chart_format_columns,
         process_strings=game_chart_process_strings,
     )
+    # スコアテーブル作成
 
     if (
         gameStatus == "Final/OT"
@@ -494,6 +483,8 @@ for i in range(len(game)):
             },
             index=[awayTeam_full_name, homeTeam_full_name],
         )
+
+    # inactive player dataframe
 
     df_away_inactive = Inactive_Player(df=awayteam_boxscore_df)
     df_home_inactive = Inactive_Player(df=hometeam_boxscore_df)
